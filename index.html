@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="kn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ಕನ್ನಡ ಕ್ಯಾರೋಸೆಲ್ | Kannada Carousel Generator</title>
+    <meta name="description" content="Create beautiful Instagram carousel posts from Kannada text">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+Kannada:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Baloo+Tamma+2:wght@400;500;600;700&family=Tiro+Kannada:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+
+    <!-- Preload fonts -->
+    <style>
+        .font-preload {
+            position: absolute;
+            left: -9999px;
+            visibility: hidden;
+            font-size: 48px;
+        }
+
+        .font-preload-1 {
+            font-family: 'Noto Serif Kannada', serif;
+        }
+
+        .font-preload-2 {
+            font-family: 'Noto Sans Kannada', sans-serif;
+        }
+
+        .font-preload-3 {
+            font-family: 'Baloo Tamma 2', cursive;
+        }
+
+        .font-preload-4 {
+            font-family: 'Tiro Kannada', serif;
+        }
+    </style>
+
+    <!-- JSZip & FileSaver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Hidden elements to preload fonts -->
+    <div class="font-preload font-preload-1" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
+    <div class="font-preload font-preload-2" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
+    <div class="font-preload font-preload-3" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
+    <div class="font-preload font-preload-4" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
+
+    <div class="app-layout">
+        <!-- Sidebar: Editor -->
+        <aside class="editor-sidebar">
+            <header class="sidebar-header">
+                <div class="brand">
+                    <span class="brand-icon">📖</span>
+                    <h1>Kannada Carousel</h1>
+                </div>
+                <button id="themeToggle" class="icon-btn" title="Toggle Theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </header>
+
+            <div class="editor-content custom-scrollbar">
+
+                <!-- CONTENT TAB -->
+                <section class="editor-section">
+                    <h2 class="section-title">✍️ Content</h2>
+
+                    <div class="form-group">
+                        <label for="articleTitle">Title</label>
+                        <input type="text" id="articleTitle" class="form-input" placeholder="Article Title (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="kannadaInput">Body Text <span id="draftStatus" class="status-badge"></span></label>
+                        <textarea id="kannadaInput" class="form-textarea" placeholder="Paste your Kannada text here..."
+                            rows="12"></textarea>
+                    </div>
+
+                    <div class="toolbar">
+                        <button id="clearDraftBtn" class="text-btn text-danger">Clear</button>
+                        <div class="toolbar-right">
+                            <!-- Undo/Redo could ideally go here if we built custom toolbar buttons -->
+                        </div>
+                    </div>
+                </section>
+
+                <div class="divider"></div>
+
+                <!-- DESIGN SECTION -->
+                <section class="editor-section">
+                    <h2 class="section-title">🎨 Design & Style</h2>
+
+                    <!-- Theme Selector (Visual) -->
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <div class="theme-grid">
+                            <label class="theme-option">
+                                <input type="radio" name="bgTheme" value="oldPaper">
+                                <span class="theme-preview"
+                                    style="background: #e8dcc8; border: 1px solid #d0c4b4;"></span>
+                                <span class="theme-name">Vintage</span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="bgTheme" value="cream" checked>
+                                <span class="theme-preview"
+                                    style="background: #f4f0e5; border: 1px solid #e6e0d2;"></span>
+                                <span class="theme-name">Cream</span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="bgTheme" value="white">
+                                <span class="theme-preview" style="background: #ffffff; border: 1px solid #ddd;"></span>
+                                <span class="theme-name">Clean</span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="bgTheme" value="dark">
+                                <span class="theme-preview" style="background: #1a1a24; border: 1px solid #333;"></span>
+                                <span class="theme-name">Dark</span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="bgTheme" value="custom">
+                                <span class="theme-preview custom-preview"
+                                    style="background: linear-gradient(135deg, #eee 0%, #ccc 100%);"></span>
+                                <span class="theme-name">Custom</span>
+                            </label>
+                            <!-- Hidden Select for JS Compatibility (or we update JS) -->
+                            <select id="bgTheme" style="display:none">
+                                <option value="oldPaper">Old Paper</option>
+                                <option value="cream" selected>Cream</option>
+                                <option value="white">White</option>
+                                <option value="dark">Dark Mode</option>
+                                <option value="custom">Custom Color</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Custom Colors (Conditional) -->
+                    <div id="customColorRow" class="form-group" style="display: none;">
+                        <label>Custom Colors</label>
+                        <div class="color-inputs">
+                            <div class="color-input-wrapper">
+                                <input type="color" id="customBgColor" value="#f4f0e5">
+                                <span>Background</span>
+                            </div>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="customTextColor" value="#2d2419">
+                                <span>Text</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typography -->
+                    <div class="form-row">
+                        <div class="form-group flex-grow">
+                            <label for="fontFamily">Font</label>
+                            <select id="fontFamily" class="form-select">
+                                <option value="Noto Serif Kannada">Noto Serif</option>
+                                <option value="Noto Sans Kannada">Noto Sans</option>
+                                <option value="Baloo Tamma 2">Baloo Tamma</option>
+                                <option value="Tiro Kannada">Tiro</option>
+                            </select>
+                        </div>
+                        <div class="form-group w-auto">
+                            <label>Align</label>
+                            <div class="toggle-group">
+                                <button class="toggle-btn active" data-align="left">⫷</button>
+                                <button class="toggle-btn" data-align="center">≡</button>
+                                <button class="toggle-btn" data-align="justify">☰</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Typography Tweaks</label>
+                        <div class="slider-group">
+                            <span class="slider-label">Size</span>
+                            <input type="range" id="fontSize" min="18" max="64" value="28">
+                            <span id="fontSizeValue" class="slider-value">28px</span>
+                        </div>
+                        <div class="slider-group">
+                            <span class="slider-label">Line Height</span>
+                            <input type="range" id="lineHeight" min="1.0" max="3.0" step="0.1" value="1.8">
+                            <span id="lineHeightValue" class="slider-value">1.8</span>
+                        </div>
+                        <div class="slider-group">
+                            <span class="slider-label">Margin</span>
+                            <input type="range" id="padding" min="20" max="150" value="80">
+                            <span id="paddingValue" class="slider-value">80px</span>
+                        </div>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="toggles-grid">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="showTitleHeader" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Title on Pg 1</span>
+                        </label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enableDropCap">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Drop Cap</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Decoration</label>
+                        <select id="pageStyle" class="form-select">
+                            <option value="simple">None</option>
+                            <option value="border" selected>Simple Border</option>
+                            <option value="vintage">Vintage Corners</option>
+                            <option value="minimal">Minimal Header/Footer</option>
+                        </select>
+                    </div>
+
+                    <!-- Background Image -->
+                    <div class="accordion">
+                        <details>
+                            <summary>Background Image & Watermark</summary>
+                            <div class="accordion-content">
+                                <div class="form-group">
+                                    <label>Background Texture (Optional)</label>
+                                    <div class="file-upload">
+                                        <label for="bgImage" class="file-label">Choose Image...</label>
+                                        <input type="file" id="bgImage" accept="image/*">
+                                        <button id="clearBgImage" class="icon-btn-small"
+                                            style="display: none;">✕</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Logo / Watermark</label>
+                                    <div class="file-upload">
+                                        <label for="watermarkImage" class="file-label">Upload Logo...</label>
+                                        <input type="file" id="watermarkImage" accept="image/*">
+                                        <button id="clearWatermark" class="icon-btn-small"
+                                            style="display: none;">✕</button>
+                                    </div>
+                                </div>
+                                <div id="watermarkSettings" style="display:none">
+                                    <div class="form-group">
+                                        <label>Position</label>
+                                        <select id="watermarkPosition" class="form-select">
+                                            <option value="bottom-right">Bottom Right</option>
+                                            <option value="bottom-left">Bottom Left</option>
+                                            <option value="top-right">Top Right</option>
+                                            <option value="top-left">Top Left</option>
+                                            <option value="center">Center</option>
+                                        </select>
+                                    </div>
+                                    <div class="slider-group">
+                                        <span class="slider-label">Opacity</span>
+                                        <input type="range" id="watermarkOpacity" min="0.1" max="1" step="0.1"
+                                            value="0.5">
+                                        <span id="watermarkOpacityValue" class="slider-value">50%</span>
+                                    </div>
+                                    <!-- Hidden rows for compatibility with existing JS logic selection -->
+                                    <div id="watermarkPositionRow"></div>
+                                    <div id="watermarkOpacityRow"></div>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </section>
+
+                <div class="divider"></div>
+
+                <!-- EXPORT SECTION -->
+                <section class="editor-section">
+                    <h2 class="section-title">🚀 Export</h2>
+                    <div class="form-row">
+                        <div class="form-group flex-grow">
+                            <label for="aspectRatio">Size</label>
+                            <select id="aspectRatio" class="form-select">
+                                <option value="4:5" selected>Instagram Post (4:5)</option>
+                                <option value="1:1">Square (1:1)</option>
+                                <option value="9:16">Story (9:16)</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-grow">
+                            <label for="imageFormat">Format</label>
+                            <select id="imageFormat" class="form-select">
+                                <option value="png">PNG</option>
+                                <option value="jpeg">JPG</option>
+                                <option value="webp">WebP</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="qualityRow">
+                        <div class="slider-group">
+                            <span class="slider-label">Quality</span>
+                            <input type="range" id="imageQuality" min="0.5" max="1" step="0.1" value="0.9">
+                            <span id="imageQualityValue" class="slider-value">90%</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="spacer-bottom"></div>
+            </div>
+
+            <!-- Sticky Action Bar -->
+            <div class="action-bar">
+                <button id="generateBtn" class="btn btn-primary btn-lg btn-block">
+                    Generate Preview
+                </button>
+                <button id="downloadBtn" class="btn btn-outline btn-block" disabled>
+                    Download ZIP
+                </button>
+
+                <!-- Hidden button for draft save compatibility if needed, or we implement auto save logic only -->
+                <button id="saveDraftBtn" style="display:none"></button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace: Preview -->
+        <main class="preview-stage">
+            <div class="stage-header">
+                <div class="stage-info">
+                    <span id="pageCount" class="badge">0 Pages</span>
+                </div>
+                <div class="stage-actions">
+                    <!-- Zoom controls could go here -->
+                </div>
+            </div>
+
+            <div id="previewContainer" class="preview-grid custom-scrollbar">
+                <div class="empty-state-large">
+                    <div class="empty-illustration">📄</div>
+                    <h3>Ready to create?</h3>
+                    <p>Enter your content on the left and click Generate.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden Canvas -->
+    <canvas id="renderCanvas" style="display: none;"></canvas>
+
+    <!-- Modal -->
+    <div id="previewModal" class="modal-backdrop">
+        <div class="modal-window">
+            <button class="modal-close-btn" id="modalClose">✕</button>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Preview">
+            </div>
+            <div class="modal-footer">
+                <button id="modalDownload" class="btn btn-primary">Download Image</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+
+    <!-- Inline script to handle new UI events mapping to existing logic if needed -->
+    <script>
+        // Map radio buttons to the hidden select for theme
+        document.querySelectorAll('input[name="bgTheme"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const select = document.getElementById('bgTheme');
+                select.value = e.target.value;
+                select.dispatchEvent(new Event('change')); // Trigger existing logic
+            });
+        });
+
+        // Map toggle buttons to alignment settings
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Remove active from all
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                // Add to clicked
+                e.target.classList.add('active');
+                // The existing app.js logic handles the click event on .align-btn
+                // We need to make sure our new buttons have that class or we bridge it
+            });
+        });
+
+        // Add align-btn class for compatibility
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.add('align-btn'));
+
+        // Handle watermark logic visibility bridging
+        const wmInput = document.getElementById('watermarkImage');
+        wmInput.addEventListener('change', () => {
+            document.getElementById('watermarkSettings').style.display = 'block';
+        });
+        document.getElementById('clearWatermark').addEventListener('click', () => {
+            document.getElementById('watermarkSettings').style.display = 'none';
+        });
+    </script>
+</body>
+
+</html>
