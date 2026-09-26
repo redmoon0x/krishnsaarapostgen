@@ -14,10 +14,18 @@
         rel="stylesheet">
 
     <style>
+        /* Off-screen but still laid out, so the browser actually loads
+           the faces. Kept inside the viewport: a -9999px left would widen
+           the root scroll area and let the document scroll sideways. */
         .font-preload {
             position: absolute;
-            left: -9999px;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 0;
+            overflow: hidden;
             visibility: hidden;
+            pointer-events: none;
             font-size: 48px;
         }
 
@@ -370,7 +378,7 @@
 
                                 <div class="chip-set">
                                     <span class="chip-set-name" id="grpColour">Colour</span>
-                                    <div class="chip-grid chip-grid-5" role="radiogroup" aria-labelledby="grpColour">
+                                    <div class="chip-grid chip-grid-3" role="radiogroup" aria-labelledby="grpColour">
                                         <label class="chip" title="Sage">
                                             <input type="radio" name="bgTheme" value="sage">
                                             <span class="chip-swatch"
@@ -389,6 +397,12 @@
                                                 style="background:linear-gradient(160deg,#ffe9c8,#ffbe8e 50%,#e8708c)"></span>
                                             <span class="chip-name">Sunrise</span>
                                         </label>
+                                    </div>
+                                </div>
+
+                                <div class="chip-set">
+                                    <span class="chip-set-name" id="grpDeep">Deep</span>
+                                    <div class="chip-grid chip-grid-3" role="radiogroup" aria-labelledby="grpDeep">
                                         <label class="chip" title="Dusk">
                                             <input type="radio" name="bgTheme" value="dusk">
                                             <span class="chip-swatch"
@@ -401,11 +415,6 @@
                                                 style="background:linear-gradient(160deg,#0a1120,#152341 60%,#243a63)"></span>
                                             <span class="chip-name">Night</span>
                                         </label>
-                                    </div>
-                                </div>
-
-                                <div class="chip-set">
-                                    <div class="chip-grid chip-grid-3" role="radiogroup" aria-label="Custom">
                                         <label class="chip" title="Custom colour">
                                             <input type="radio" name="bgTheme" value="custom">
                                             <span class="chip-swatch chip-swatch-custom"

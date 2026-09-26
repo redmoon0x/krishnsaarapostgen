@@ -830,8 +830,11 @@ class KannadaCarouselGenerator {
     }
 
     writeDraft(state) {
+        // Default to a fresh snapshot: calling this bare used to persist the
+        // literal string "undefined", silently losing every draft.
+        const payload = state || this.serializeState();
         try {
-            localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
             return true;
         } catch (e) {
             return false;

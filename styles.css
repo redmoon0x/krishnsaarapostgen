@@ -60,9 +60,23 @@
     display: none !important;
 }
 
+/* The app is a single full-viewport box: nothing may scroll the
+   document, or the box lifts and leaves an unpainted void beneath it. */
 html,
 body {
     height: 100%;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+/* Paint containment on the root. The controls column is its own scroll
+   container, but its content still extended the root's scrollable
+   overflow by ~830px, giving the document a phantom scroll range. Any
+   scroll (wheel overscroll, focus, restore, capture tool) then dragged
+   the fixed-height shell upward and exposed bare canvas below it. */
+html {
+    contain: paint;
 }
 
 body {
@@ -72,7 +86,6 @@ body {
     background: var(--bg);
     color: var(--fg);
     -webkit-font-smoothing: antialiased;
-    overflow: hidden;
 }
 
 body.modal-open {
@@ -137,8 +150,13 @@ textarea {
 .shell {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    /* 100% of the clipped root, capped by the real visual viewport so
+       mobile browser chrome can never push the box past the screen. */
+    height: 100%;
+    max-height: 100vh;
+    max-height: 100dvh;
     width: 100%;
+    background: var(--bg);
 }
 
 /* ---------- Topbar ---------- */
@@ -734,21 +752,20 @@ input[type=range]::-moz-range-thumb {
     color: var(--fg-3);
 }
 
+/* One column count for every set: the swatch is a size-comparison
+   instrument, so it must be the same object in all four groups. */
 .chip-grid {
     display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
 }
 
 .chip-grid-3 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
 }
 
 .chip-grid-4 {
     grid-template-columns: repeat(4, 1fr);
-}
-
-.chip-grid-5 {
-    grid-template-columns: repeat(5, 1fr);
 }
 
 .chip {
@@ -1212,6 +1229,13 @@ input[type=file] {
 }
 
 @media (max-width: 1000px) {
+    /* Stacked layout: the document legitimately scrolls again. */
+    html,
+    body {
+        height: auto;
+        overflow: visible;
+    }
+
     body {
         overflow: auto;
     }
@@ -1219,6 +1243,8 @@ input[type=file] {
     .shell {
         height: auto;
         min-height: 100vh;
+        min-height: 100dvh;
+        max-height: none;
     }
 
     .topbar {
@@ -1281,9 +1307,5 @@ input[type=file] {
     .field-pair,
     .color-pair {
         grid-template-columns: 1fr;
-    }
-
-    .chip-grid-5 {
-        grid-template-columns: repeat(3, 1fr);
     }
 }
