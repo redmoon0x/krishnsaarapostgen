@@ -1,0 +1,17 @@
+# Nothing to build — index.html runs directly from the filesystem.
+# These are here so a local checkout stays clean if you start editing.
+
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Editor / OS cruft
+.vscode/
+.idea/
+*.swp
+
+# Local scratch
+*.bak
+*.tmp
+scratch/

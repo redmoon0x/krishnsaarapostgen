@@ -1,0 +1,131 @@
+/* ============================================================
+   Kannada typefaces from fonts.sanchaya.net (Sanchaya project),
+   vendored locally so the app works offline and from file://.
+
+   Families with a single weight are registered for 400 and 700
+   pointing at the same file. That makes the browser resolve a real
+   face for `bold` instead of synthesising a smeared weight, which
+   matters for headlines and the drop cap.
+   ============================================================ */
+
+/* ---- Serif / text faces ---- */
+@font-face {
+    font-family: "Tunga";
+    src: url("fonts/Tunga-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Tunga";
+    src: url("fonts/Tunga-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Kedage";
+    src: url("fonts/Kedage-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Kedage";
+    src: url("fonts/Kedage-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Kadamba";
+    src: url("fonts/KadambaKannada-Regular.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Lohit Kannada";
+    src: url("fonts/LohitKannada-Regular.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Anek Kannada";
+    src: url("fonts/AnekKannada-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Anek Kannada";
+    src: url("fonts/AnekKannada-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ---- Display / character faces ---- */
+@font-face {
+    font-family: "Karnata GTN";
+    src: url("fonts/KarnataGTN-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Karnata GTN";
+    src: url("fonts/KarnataGTN-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Nudi 22K";
+    src: url("fonts/Nudi22K.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Karnata Bandipur";
+    src: url("fonts/KarnataBandipur-Regular.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Karnata F Kittel";
+    src: url("fonts/KarnataFKittel-Regular.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Karnata Wesleyan";
+    src: url("fonts/KarnataWesleyan-Regular.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Karnata German Mission";
+    src: url("fonts/KarnataGermanMission-Regular.ttf") format("truetype");
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}

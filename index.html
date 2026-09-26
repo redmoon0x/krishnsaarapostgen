@@ -4,19 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ಕನ್ನಡ ಕ್ಯಾರೋಸೆಲ್ | Kannada Carousel Generator</title>
-    <meta name="description" content="Create beautiful Instagram carousel posts from Kannada text">
+    <title>Carousel Compositor — Kannada</title>
+    <meta name="description" content="Typeset Kannada carousel posts with sentence-aware pagination">
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Serif+Kannada:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Baloo+Tamma+2:wght@400;500;600;700&family=Tiro+Kannada:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+Kannada:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Baloo+Tamma+2:wght@400;500;600;700&family=Tiro+Kannada:ital@0;1&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 
-
-    <!-- Preload fonts -->
     <style>
         .font-preload {
             position: absolute;
@@ -42,358 +38,527 @@
         }
     </style>
 
-    <!-- JSZip & FileSaver -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
+    <script src="vendor/jszip-3.10.1.min.js"></script>
+    <link rel="stylesheet" href="fonts.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <!-- Hidden elements to preload fonts -->
     <div class="font-preload font-preload-1" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
     <div class="font-preload font-preload-2" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
     <div class="font-preload font-preload-3" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
     <div class="font-preload font-preload-4" aria-hidden="true">ಕನ್ನಡ ಭಾಷೆ</div>
 
-    <div class="app-layout">
-        <!-- Sidebar: Editor -->
-        <aside class="editor-sidebar">
-            <header class="sidebar-header">
-                <div class="brand">
-                    <span class="brand-icon">📖</span>
-                    <h1>Kannada Carousel</h1>
+    <!-- Icon sprite. Every glyph is a stroked 24px grid drawing, no emoji. -->
+    <svg class="sprite" aria-hidden="true" focusable="false">
+        <defs>
+            <g id="i-mark">
+                <path d="M4 3h9l7 7v11H4z" />
+                <path d="M13 3v7h7" />
+                <path d="M8 14h8M8 17.5h5" />
+            </g>
+            <g id="i-sun">
+                <circle cx="12" cy="12" r="4.2" />
+                <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6" />
+            </g>
+            <g id="i-moon">
+                <path d="M20 14.2A8.4 8.4 0 019.8 4 8.4 8.4 0 1020 14.2z" />
+            </g>
+            <g id="i-compose">
+                <path d="M4 19.5l1-4.2L15.6 4.7a2 2 0 012.8 0l1 1a2 2 0 010 2.8L8.8 19z" />
+                <path d="M14.2 6.1l3.7 3.7" />
+            </g>
+            <g id="i-archive">
+                <path d="M12 3.5v11" />
+                <path d="M8 10.8l4 4 4-4" />
+                <path d="M3.5 16v3.5a1 1 0 001 1h15a1 1 0 001-1V16" />
+            </g>
+            <g id="i-undo">
+                <path d="M4 9.5h9.5a5.5 5.5 0 010 11H8" />
+                <path d="M7.5 5.5L3.5 9.5l4 4" />
+            </g>
+            <g id="i-redo">
+                <path d="M20 9.5h-9.5a5.5 5.5 0 000 11H16" />
+                <path d="M16.5 5.5l4 4-4 4" />
+            </g>
+            <g id="i-image">
+                <path d="M3.5 4.5h17v15h-17z" />
+                <circle cx="8.6" cy="9.6" r="1.6" />
+                <path d="M3.5 16.4l4.8-4.4 3.6 3.2 3.4-3.6 5.2 5.2" />
+            </g>
+            <g id="i-seal">
+                <circle cx="12" cy="9.5" r="5.5" />
+                <path d="M9 14.2L7.6 21l4.4-2.4 4.4 2.4-1.4-6.8" />
+            </g>
+            <g id="i-dismiss">
+                <path d="M5.5 5.5l13 13M18.5 5.5l-13 13" />
+            </g>
+            <g id="i-trash">
+                <path d="M4 6.5h16M9.5 6.5V4h5v2.5M6 6.5l1 14h10l1-14" />
+                <path d="M10.2 10.5v6M13.8 10.5v6" />
+            </g>
+            <g id="i-expand">
+                <path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5" />
+            </g>
+            <g id="i-align-left">
+                <path d="M3.5 6.5h11M3.5 12h7M3.5 17.5h11" />
+            </g>
+            <g id="i-align-center">
+                <path d="M6.5 6.5h11M8.5 12h7M6.5 17.5h11" />
+            </g>
+            <g id="i-align-justify">
+                <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+            </g>
+            <g id="i-gauge">
+                <path d="M4 18a8 8 0 1116 0" />
+                <path d="M12 18l4.5-5" />
+                <circle cx="12" cy="18" r="1.4" />
+            </g>
+        </defs>
+    </svg>
+
+    <div class="shell">
+        <header class="topbar">
+            <div class="brand">
+                <svg class="icon icon-lg" aria-hidden="true">
+                    <use href="#i-mark" />
+                </svg>
+                <h1>Carousel <em>Compositor</em></h1>
+                <span class="brand-sub" lang="kn">ಕನ್ನಡ</span>
+            </div>
+
+            <div class="topbar-readout">
+                <span class="readout">
+                    <span class="readout-key">Output</span>
+                    <span class="readout-val" id="pageCount">—</span>
+                </span>
+                <span class="readout readout-alert" id="staleBadge" hidden>
+                    <span class="readout-alert-dot" aria-hidden="true"></span>Stale — regenerate
+                </span>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="tool-group">
+                    <button id="undoBtn" class="tool" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-undo" />
+                        </svg>
+                    </button>
+                    <button id="redoBtn" class="tool" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>
+                        <svg class="icon" aria-hidden="true">
+                            <use href="#i-redo" />
+                        </svg>
+                    </button>
+                    <button id="themeToggle" class="tool" title="Toggle appearance" aria-label="Toggle appearance">
+                        <svg class="icon icon-sun" aria-hidden="true">
+                            <use href="#i-sun" />
+                        </svg>
+                        <svg class="icon icon-moon" aria-hidden="true">
+                            <use href="#i-moon" />
+                        </svg>
+                    </button>
                 </div>
-                <button id="themeToggle" class="icon-btn" title="Toggle Theme">
-                    <span class="theme-icon">🌙</span>
+                <button id="generateBtn" class="btn btn-primary">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-compose" />
+                    </svg>
+                    <span>Compose</span>
                 </button>
-            </header>
+                <button id="downloadBtn" class="btn btn-outline" disabled>
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-archive" />
+                    </svg>
+                    <span>Download ZIP</span>
+                </button>
+            </div>
+        </header>
 
-            <div class="editor-content custom-scrollbar">
+        <div class="workspace">
+            <aside class="controls">
+                <div class="controls-scroll custom-scrollbar">
 
-                <!-- CONTENT TAB -->
-                <section class="editor-section">
-                    <h2 class="section-title">✍️ Content</h2>
+                    <!-- 01 CONTENT -->
+                    <section class="group">
+                        <h2 class="group-title"><span class="group-index">01</span> Content</h2>
 
-                    <div class="form-group">
-                        <label for="articleTitle">Title</label>
-                        <input type="text" id="articleTitle" class="form-input" placeholder="Article Title (optional)">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="kannadaInput">Body Text <span id="draftStatus" class="status-badge"></span></label>
-                        <textarea id="kannadaInput" class="form-textarea" placeholder="Paste your Kannada text here..."
-                            rows="12"></textarea>
-                    </div>
-
-                    <div class="toolbar">
-                        <button id="clearDraftBtn" class="text-btn text-danger">Clear</button>
-                        <div class="toolbar-right">
-                            <!-- Undo/Redo could ideally go here if we built custom toolbar buttons -->
+                        <div class="field">
+                            <label class="field-label" for="articleTitle">Headline</label>
+                            <input type="text" id="articleTitle" class="input" placeholder="Optional — shown on page one">
                         </div>
-                    </div>
-                </section>
 
-                <div class="divider"></div>
+                        <div class="field">
+                            <div class="field-head">
+                                <label class="field-label" for="kannadaInput">Body</label>
+                                <span id="draftStatus" class="field-note" role="status" aria-live="polite"></span>
+                            </div>
+                            <textarea id="kannadaInput" class="input textarea" rows="10"
+                                placeholder="ನಿಮ್ಮ ಕನ್ನಡ ಪಠ್ಯ ಇಲ್ಲಿ ಅಂಟಿ…"></textarea>
+                            <p class="field-hint">Markdown: <code>##</code> <code>-</code>
+                                <code>1.</code> <code>- [x]</code> <code>|table|</code> <code>&gt;</code>
+                                <code>```</code> <code>---</code>.
+                                <code>&lt;!-- break --&gt;</code> forces a page break.</p>
+                        </div>
 
-                <!-- DESIGN SECTION -->
-                <section class="editor-section">
-                    <h2 class="section-title">🎨 Design & Style</h2>
+                        <div class="field-row">
+                            <button id="clearDraftBtn" class="link-btn link-danger">
+                                <svg class="icon" aria-hidden="true">
+                                    <use href="#i-trash" />
+                                </svg>
+                                <span>Clear draft</span>
+                            </button>
+                            <span class="field-hint field-hint-right">Ctrl+Z undo</span>
+                        </div>
+                    </section>
 
-                    <!-- Theme Selector (Visual) -->
-                    <div class="form-group">
-                        <label>Theme</label>
-                        <div class="theme-grid">
-                            <label class="theme-option">
-                                <input type="radio" name="bgTheme" value="oldPaper">
-                                <span class="theme-preview"
-                                    style="background: #e8dcc8; border: 1px solid #d0c4b4;"></span>
-                                <span class="theme-name">Vintage</span>
+                    <!-- 02 TYPE -->
+                    <section class="group">
+                        <h2 class="group-title"><span class="group-index">02</span> Typography</h2>
+
+                        <div class="field">
+                            <label class="field-label" for="fontFamily">Face</label>
+                            <select id="fontFamily" class="input select">
+                                <optgroup label="Sanchaya — text">
+                                    <option value="Tunga">Tunga</option>
+                                    <option value="Kedage">Kedage</option>
+                                    <option value="Kadamba">Kadamba</option>
+                                    <option value="Anek Kannada">Anek Kannada</option>
+                                    <option value="Lohit Kannada">Lohit Kannada</option>
+                                </optgroup>
+                                <optgroup label="Sanchaya — display">
+                                    <option value="Karnata GTN">Karnata GTN</option>
+                                    <option value="Nudi 22K">Nudi 22K</option>
+                                    <option value="Karnata Bandipur">Karnata Bandipur</option>
+                                    <option value="Karnata F Kittel">Karnata F Kittel</option>
+                                    <option value="Karnata Wesleyan">Karnata Wesleyan</option>
+                                    <option value="Karnata German Mission">Karnata German Mission</option>
+                                </optgroup>
+                                <optgroup label="Google">
+                                    <option value="Noto Serif Kannada">Noto Serif</option>
+                                    <option value="Noto Sans Kannada">Noto Sans</option>
+                                    <option value="Baloo Tamma 2">Baloo Tamma</option>
+                                    <option value="Tiro Kannada">Tiro</option>
+                                </optgroup>
+                            </select>
+                            <p class="field-hint" id="fontNote"></p>
+                        </div>
+
+                        <div class="field">
+                            <span class="field-label" id="alignLabel">Align</span>
+                            <div class="segmented" role="group" aria-labelledby="alignLabel">
+                                <button type="button" class="seg align-btn is-active" data-align="left"
+                                    aria-pressed="true" title="Align left">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-align-left" />
+                                    </svg>
+                                    <span class="sr-only">Align left</span>
+                                </button>
+                                <button type="button" class="seg align-btn" data-align="center" aria-pressed="false"
+                                    title="Align centre">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-align-center" />
+                                    </svg>
+                                    <span class="sr-only">Align centre</span>
+                                </button>
+                                <button type="button" class="seg align-btn" data-align="justify" aria-pressed="false"
+                                    title="Justify">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-align-justify" />
+                                    </svg>
+                                    <span class="sr-only">Justify</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="slider">
+                                <label class="slider-key" for="fontSize">Size</label>
+                                <input type="range" id="fontSize" min="18" max="64" value="28">
+                                <output class="slider-val" id="fontSizeValue" for="fontSize">28px</output>
+                            </div>
+                            <div class="slider">
+                                <label class="slider-key" for="lineHeight">Leading</label>
+                                <input type="range" id="lineHeight" min="1.0" max="3.0" step="0.1" value="1.8">
+                                <output class="slider-val" id="lineHeightValue" for="lineHeight">1.8</output>
+                            </div>
+                            <div class="slider">
+                                <label class="slider-key" for="padding">Margin</label>
+                                <input type="range" id="padding" min="20" max="150" value="80">
+                                <output class="slider-val" id="paddingValue" for="padding">80px</output>
+                            </div>
+                        </div>
+
+                        <div class="switches">
+                            <label class="switch">
+                                <input type="checkbox" id="showTitleHeader" checked>
+                                <span class="switch-track" aria-hidden="true"><span class="switch-dot"></span></span>
+                                <span class="switch-text">Headline on pg 1</span>
                             </label>
-                            <label class="theme-option">
-                                <input type="radio" name="bgTheme" value="cream" checked>
-                                <span class="theme-preview"
-                                    style="background: #f4f0e5; border: 1px solid #e6e0d2;"></span>
-                                <span class="theme-name">Cream</span>
+                            <label class="switch">
+                                <input type="checkbox" id="enableDropCap">
+                                <span class="switch-track" aria-hidden="true"><span class="switch-dot"></span></span>
+                                <span class="switch-text">Drop cap</span>
                             </label>
-                            <label class="theme-option">
-                                <input type="radio" name="bgTheme" value="white">
-                                <span class="theme-preview" style="background: #ffffff; border: 1px solid #ddd;"></span>
-                                <span class="theme-name">Clean</span>
-                            </label>
-                            <label class="theme-option">
-                                <input type="radio" name="bgTheme" value="dark">
-                                <span class="theme-preview" style="background: #1a1a24; border: 1px solid #333;"></span>
-                                <span class="theme-name">Dark</span>
-                            </label>
-                            <label class="theme-option">
-                                <input type="radio" name="bgTheme" value="custom">
-                                <span class="theme-preview custom-preview"
-                                    style="background: linear-gradient(135deg, #eee 0%, #ccc 100%);"></span>
-                                <span class="theme-name">Custom</span>
-                            </label>
-                            <!-- Hidden Select for JS Compatibility (or we update JS) -->
-                            <select id="bgTheme" style="display:none">
-                                <option value="oldPaper">Old Paper</option>
-                                <option value="cream" selected>Cream</option>
-                                <option value="white">White</option>
-                                <option value="dark">Dark Mode</option>
-                                <option value="custom">Custom Color</option>
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" for="pageStyle">Rule</label>
+                            <select id="pageStyle" class="input select">
+                                <option value="simple">None</option>
+                                <option value="border" selected>Hairline border</option>
+                                <option value="vintage">Corner flourishes</option>
+                                <option value="minimal">Header / footer rules</option>
                             </select>
                         </div>
-                    </div>
+                    </section>
 
-                    <!-- Custom Colors (Conditional) -->
-                    <div id="customColorRow" class="form-group" style="display: none;">
-                        <label>Custom Colors</label>
-                        <div class="color-inputs">
-                            <div class="color-input-wrapper">
-                                <input type="color" id="customBgColor" value="#f4f0e5">
-                                <span>Background</span>
-                            </div>
-                            <div class="color-input-wrapper">
-                                <input type="color" id="customTextColor" value="#2d2419">
-                                <span>Text</span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- 03 GROUND -->
+                    <section class="group">
+                        <h2 class="group-title"><span class="group-index">03</span> Ground</h2>
 
-                    <!-- Typography -->
-                    <div class="form-row">
-                        <div class="form-group flex-grow">
-                            <label for="fontFamily">Font</label>
-                            <select id="fontFamily" class="form-select">
-                                <option value="Noto Serif Kannada">Noto Serif</option>
-                                <option value="Noto Sans Kannada">Noto Sans</option>
-                                <option value="Baloo Tamma 2">Baloo Tamma</option>
-                                <option value="Tiro Kannada">Tiro</option>
-                            </select>
-                        </div>
-                        <div class="form-group w-auto">
-                            <label>Align</label>
-                            <div class="toggle-group">
-                                <button class="toggle-btn active" data-align="left">⫷</button>
-                                <button class="toggle-btn" data-align="center">≡</button>
-                                <button class="toggle-btn" data-align="justify">☰</button>
-                            </div>
-                        </div>
-                    </div>
+                        <fieldset class="field theme-fieldset">
+                            <legend class="field-label">Background</legend>
+                            <div class="chips">
 
-                    <div class="form-group">
-                        <label>Typography Tweaks</label>
-                        <div class="slider-group">
-                            <span class="slider-label">Size</span>
-                            <input type="range" id="fontSize" min="18" max="64" value="28">
-                            <span id="fontSizeValue" class="slider-value">28px</span>
-                        </div>
-                        <div class="slider-group">
-                            <span class="slider-label">Line Height</span>
-                            <input type="range" id="lineHeight" min="1.0" max="3.0" step="0.1" value="1.8">
-                            <span id="lineHeightValue" class="slider-value">1.8</span>
-                        </div>
-                        <div class="slider-group">
-                            <span class="slider-label">Margin</span>
-                            <input type="range" id="padding" min="20" max="150" value="80">
-                            <span id="paddingValue" class="slider-value">80px</span>
-                        </div>
-                    </div>
-
-                    <!-- Toggles -->
-                    <div class="toggles-grid">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="showTitleHeader" checked>
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-text">Title on Pg 1</span>
-                        </label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="enableDropCap">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-text">Drop Cap</span>
-                        </label>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Decoration</label>
-                        <select id="pageStyle" class="form-select">
-                            <option value="simple">None</option>
-                            <option value="border" selected>Simple Border</option>
-                            <option value="vintage">Vintage Corners</option>
-                            <option value="minimal">Minimal Header/Footer</option>
-                        </select>
-                    </div>
-
-                    <!-- Background Image -->
-                    <div class="accordion">
-                        <details>
-                            <summary>Background Image & Watermark</summary>
-                            <div class="accordion-content">
-                                <div class="form-group">
-                                    <label>Background Texture (Optional)</label>
-                                    <div class="file-upload">
-                                        <label for="bgImage" class="file-label">Choose Image...</label>
-                                        <input type="file" id="bgImage" accept="image/*">
-                                        <button id="clearBgImage" class="icon-btn-small"
-                                            style="display: none;">✕</button>
+                                <div class="chip-set">
+                                    <span class="chip-set-name" id="grpPaper">Paper</span>
+                                    <div class="chip-grid chip-grid-4" role="radiogroup" aria-labelledby="grpPaper">
+                                        <label class="chip" title="Cream">
+                                            <input type="radio" name="bgTheme" value="cream" checked>
+                                            <span class="chip-swatch" style="background:#f4f0e5"></span>
+                                            <span class="chip-name">Cream</span>
+                                        </label>
+                                        <label class="chip" title="Vintage">
+                                            <input type="radio" name="bgTheme" value="oldPaper">
+                                            <span class="chip-swatch" style="background:#e8dcc8"></span>
+                                            <span class="chip-name">Vintage</span>
+                                        </label>
+                                        <label class="chip" title="Newsprint">
+                                            <input type="radio" name="bgTheme" value="newsprint">
+                                            <span class="chip-swatch" style="background:#e9edf1"></span>
+                                            <span class="chip-name">News</span>
+                                        </label>
+                                        <label class="chip" title="Kraft">
+                                            <input type="radio" name="bgTheme" value="kraft">
+                                            <span class="chip-swatch" style="background:#d8c2a2"></span>
+                                            <span class="chip-name">Kraft</span>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Logo / Watermark</label>
-                                    <div class="file-upload">
-                                        <label for="watermarkImage" class="file-label">Upload Logo...</label>
-                                        <input type="file" id="watermarkImage" accept="image/*">
-                                        <button id="clearWatermark" class="icon-btn-small"
-                                            style="display: none;">✕</button>
+
+                                <div class="chip-set">
+                                    <span class="chip-set-name" id="grpInk">Ink</span>
+                                    <div class="chip-grid chip-grid-3" role="radiogroup" aria-labelledby="grpInk">
+                                        <label class="chip" title="Clean">
+                                            <input type="radio" name="bgTheme" value="white">
+                                            <span class="chip-swatch" style="background:#ffffff"></span>
+                                            <span class="chip-name">Clean</span>
+                                        </label>
+                                        <label class="chip" title="Dot grid">
+                                            <input type="radio" name="bgTheme" value="dotgrid">
+                                            <span class="chip-swatch"
+                                                style="background-color:#fbfbfd;background-image:radial-gradient(#7a7c92 1.1px,transparent 1.1px);background-size:6px 6px"></span>
+                                            <span class="chip-name">Dots</span>
+                                        </label>
+                                        <label class="chip" title="Ruled">
+                                            <input type="radio" name="bgTheme" value="ruled">
+                                            <span class="chip-swatch"
+                                                style="background-color:#fdfdfa;background-image:linear-gradient(#68809a 1px,transparent 1px);background-size:100% 7px"></span>
+                                            <span class="chip-name">Ruled</span>
+                                        </label>
                                     </div>
                                 </div>
-                                <div id="watermarkSettings" style="display:none">
-                                    <div class="form-group">
-                                        <label>Position</label>
-                                        <select id="watermarkPosition" class="form-select">
-                                            <option value="bottom-right">Bottom Right</option>
-                                            <option value="bottom-left">Bottom Left</option>
-                                            <option value="top-right">Top Right</option>
-                                            <option value="top-left">Top Left</option>
-                                            <option value="center">Center</option>
-                                        </select>
+
+                                <div class="chip-set">
+                                    <span class="chip-set-name" id="grpColour">Colour</span>
+                                    <div class="chip-grid chip-grid-5" role="radiogroup" aria-labelledby="grpColour">
+                                        <label class="chip" title="Sage">
+                                            <input type="radio" name="bgTheme" value="sage">
+                                            <span class="chip-swatch"
+                                                style="background:linear-gradient(160deg,#e6ece1,#cbdac9)"></span>
+                                            <span class="chip-name">Sage</span>
+                                        </label>
+                                        <label class="chip" title="Terracotta">
+                                            <input type="radio" name="bgTheme" value="terracotta">
+                                            <span class="chip-swatch"
+                                                style="background:linear-gradient(160deg,#f6e7db,#e8c3ab)"></span>
+                                            <span class="chip-name">Terra</span>
+                                        </label>
+                                        <label class="chip" title="Sunrise">
+                                            <input type="radio" name="bgTheme" value="sunrise">
+                                            <span class="chip-swatch"
+                                                style="background:linear-gradient(160deg,#ffe9c8,#ffbe8e 50%,#e8708c)"></span>
+                                            <span class="chip-name">Sunrise</span>
+                                        </label>
+                                        <label class="chip" title="Dusk">
+                                            <input type="radio" name="bgTheme" value="dusk">
+                                            <span class="chip-swatch"
+                                                style="background:linear-gradient(160deg,#1e1642,#4f2565 55%,#93315a)"></span>
+                                            <span class="chip-name">Dusk</span>
+                                        </label>
+                                        <label class="chip" title="Midnight">
+                                            <input type="radio" name="bgTheme" value="midnight">
+                                            <span class="chip-swatch"
+                                                style="background:linear-gradient(160deg,#0a1120,#152341 60%,#243a63)"></span>
+                                            <span class="chip-name">Night</span>
+                                        </label>
                                     </div>
-                                    <div class="slider-group">
-                                        <span class="slider-label">Opacity</span>
-                                        <input type="range" id="watermarkOpacity" min="0.1" max="1" step="0.1"
-                                            value="0.5">
-                                        <span id="watermarkOpacityValue" class="slider-value">50%</span>
+                                </div>
+
+                                <div class="chip-set">
+                                    <div class="chip-grid chip-grid-3" role="radiogroup" aria-label="Custom">
+                                        <label class="chip" title="Custom colour">
+                                            <input type="radio" name="bgTheme" value="custom">
+                                            <span class="chip-swatch chip-swatch-custom"
+                                                style="background:linear-gradient(135deg,#eee 0%,#bbb 100%)"></span>
+                                            <span class="chip-name">Custom</span>
+                                        </label>
                                     </div>
-                                    <!-- Hidden rows for compatibility with existing JS logic selection -->
-                                    <div id="watermarkPositionRow"></div>
-                                    <div id="watermarkOpacityRow"></div>
                                 </div>
                             </div>
-                        </details>
-                    </div>
-                </section>
+                        </fieldset>
 
-                <div class="divider"></div>
-
-                <!-- EXPORT SECTION -->
-                <section class="editor-section">
-                    <h2 class="section-title">🚀 Export</h2>
-                    <div class="form-row">
-                        <div class="form-group flex-grow">
-                            <label for="aspectRatio">Size</label>
-                            <select id="aspectRatio" class="form-select">
-                                <option value="4:5" selected>Instagram Post (4:5)</option>
-                                <option value="1:1">Square (1:1)</option>
-                                <option value="9:16">Story (9:16)</option>
-                            </select>
+                        <div id="customColorRow" class="field" hidden>
+                            <span class="field-label">Custom pair</span>
+                            <!-- Pickers are built in JS: no native colour dialog. -->
                         </div>
-                        <div class="form-group flex-grow">
-                            <label for="imageFormat">Format</label>
-                            <select id="imageFormat" class="form-select">
-                                <option value="png">PNG</option>
-                                <option value="jpeg">JPG</option>
-                                <option value="webp">WebP</option>
-                            </select>
+
+                        <div class="field">
+                            <span class="field-label" id="textureLabel">Texture</span>
+                            <div class="file-row" id="bgDropZone">
+                                <input type="file" id="bgImage" accept="image/*" aria-labelledby="textureLabel">
+                                <label class="file-btn" for="bgImage">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-image" />
+                                    </svg>
+                                    <span>Choose image</span>
+                                </label>
+                                <button id="clearBgImage" class="tool tool-sm" hidden aria-label="Remove texture">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-dismiss" />
+                                    </svg>
+                                </button>
+                                <span class="drop-note">or drop / paste</span>
+                            </div>
+                            <div id="bgImageSettings" class="slider" hidden>
+                                <label class="slider-key" for="bgImageOverlay">Scrim</label>
+                                <input type="range" id="bgImageOverlay" min="0" max="0.9" step="0.05" value="0.35">
+                                <output class="slider-val" id="bgImageOverlayValue" for="bgImageOverlay">35%</output>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group" id="qualityRow">
-                        <div class="slider-group">
-                            <span class="slider-label">Quality</span>
-                            <input type="range" id="imageQuality" min="0.5" max="1" step="0.1" value="0.9">
-                            <span id="imageQualityValue" class="slider-value">90%</span>
+
+                        <div class="field">
+                            <span class="field-label" id="markLabel">Watermark</span>
+                            <div class="file-row" id="wmDropZone">
+                                <input type="file" id="watermarkImage" accept="image/*" aria-labelledby="markLabel">
+                                <label class="file-btn" for="watermarkImage">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-seal" />
+                                    </svg>
+                                    <span>Upload mark</span>
+                                </label>
+                                <button id="clearWatermark" class="tool tool-sm" hidden aria-label="Remove watermark">
+                                    <svg class="icon" aria-hidden="true">
+                                        <use href="#i-dismiss" />
+                                    </svg>
+                                </button>
+                                <span class="drop-note">or drop / paste</span>
+                            </div>
+                            <div id="watermarkSettings" hidden>
+                                <div class="field">
+                                    <label class="field-label" for="watermarkPosition">Position</label>
+                                    <select id="watermarkPosition" class="input select">
+                                        <option value="bottom-right">Bottom right</option>
+                                        <option value="bottom-left">Bottom left</option>
+                                        <option value="top-right">Top right</option>
+                                        <option value="top-left">Top left</option>
+                                        <option value="center">Centre</option>
+                                    </select>
+                                </div>
+                                <div class="slider">
+                                    <label class="slider-key" for="watermarkOpacity">Opacity</label>
+                                    <input type="range" id="watermarkOpacity" min="0.1" max="1" step="0.1" value="0.5">
+                                    <output class="slider-val" id="watermarkOpacityValue" for="watermarkOpacity">50%</output>
+                                </div>
+                            </div>
                         </div>
+                    </section>
+
+                    <!-- 04 OUTPUT -->
+                    <section class="group">
+                        <h2 class="group-title"><span class="group-index">04</span> Output</h2>
+
+                        <div class="field-pair">
+                            <div class="field">
+                                <label class="field-label" for="aspectRatio">Frame</label>
+                                <select id="aspectRatio" class="input select">
+                                    <option value="4:5" selected>Portrait 4:5</option>
+                                    <option value="1:1">Square 1:1</option>
+                                    <option value="9:16">Story 9:16</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="imageFormat">Format</label>
+                                <select id="imageFormat" class="input select">
+                                    <option value="png">PNG</option>
+                                    <option value="jpeg">JPEG</option>
+                                    <option value="webp" id="webpOption">WebP</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field" id="qualityRow" hidden>
+                            <div class="slider">
+                                <label class="slider-key" for="imageQuality">Quality</label>
+                                <input type="range" id="imageQuality" min="0.5" max="1" step="0.1" value="0.9">
+                                <output class="slider-val" id="imageQualityValue" for="imageQuality">90%</output>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+
+            <main class="stage">
+                <div class="stage-bar">
+                    <span class="stage-label">Proof sheet</span>
+                    <span class="stage-hint">Select a page to inspect at full size</span>
+                </div>
+                <div id="previewContainer" class="proofsheet custom-scrollbar">
+                    <div class="void">
+                        <svg class="icon icon-xl" aria-hidden="true">
+                            <use href="#i-gauge" />
+                        </svg>
+                        <p class="void-title">Nothing set</p>
+                        <p class="void-body">Paste Kannada text on the left, then compose.</p>
                     </div>
-                </section>
-
-                <div class="spacer-bottom"></div>
-            </div>
-
-            <!-- Sticky Action Bar -->
-            <div class="action-bar">
-                <button id="generateBtn" class="btn btn-primary btn-lg btn-block">
-                    Generate Preview
-                </button>
-                <button id="downloadBtn" class="btn btn-outline btn-block" disabled>
-                    Download ZIP
-                </button>
-
-                <!-- Hidden button for draft save compatibility if needed, or we implement auto save logic only -->
-                <button id="saveDraftBtn" style="display:none"></button>
-            </div>
-        </aside>
-
-        <!-- Main Workspace: Preview -->
-        <main class="preview-stage">
-            <div class="stage-header">
-                <div class="stage-info">
-                    <span id="pageCount" class="badge">0 Pages</span>
                 </div>
-                <div class="stage-actions">
-                    <!-- Zoom controls could go here -->
-                </div>
-            </div>
-
-            <div id="previewContainer" class="preview-grid custom-scrollbar">
-                <div class="empty-state-large">
-                    <div class="empty-illustration">📄</div>
-                    <h3>Ready to create?</h3>
-                    <p>Enter your content on the left and click Generate.</p>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
-    <!-- Hidden Canvas -->
     <canvas id="renderCanvas" style="display: none;"></canvas>
 
-    <!-- Modal -->
-    <div id="previewModal" class="modal-backdrop">
-        <div class="modal-window">
-            <button class="modal-close-btn" id="modalClose">✕</button>
-            <div class="modal-body">
-                <img id="modalImage" src="" alt="Preview">
+    <div id="previewModal" class="modal" role="dialog" aria-modal="true" aria-label="Page preview" aria-hidden="true">
+        <div class="modal-panel">
+            <button class="tool modal-close" id="modalClose" aria-label="Close preview">
+                <svg class="icon" aria-hidden="true">
+                    <use href="#i-dismiss" />
+                </svg>
+            </button>
+            <div class="modal-figure">
+                <img id="modalImage" alt="">
             </div>
-            <div class="modal-footer">
-                <button id="modalDownload" class="btn btn-primary">Download Image</button>
+            <div class="modal-foot">
+                <button id="modalDownload" class="btn btn-primary">
+                    <svg class="icon" aria-hidden="true">
+                        <use href="#i-archive" />
+                    </svg>
+                    <span>Download page</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
-
-    <!-- Inline script to handle new UI events mapping to existing logic if needed -->
-    <script>
-        // Map radio buttons to the hidden select for theme
-        document.querySelectorAll('input[name="bgTheme"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const select = document.getElementById('bgTheme');
-                select.value = e.target.value;
-                select.dispatchEvent(new Event('change')); // Trigger existing logic
-            });
-        });
-
-        // Map toggle buttons to alignment settings
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Remove active from all
-                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-                // Add to clicked
-                e.target.classList.add('active');
-                // The existing app.js logic handles the click event on .align-btn
-                // We need to make sure our new buttons have that class or we bridge it
-            });
-        });
-
-        // Add align-btn class for compatibility
-        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.add('align-btn'));
-
-        // Handle watermark logic visibility bridging
-        const wmInput = document.getElementById('watermarkImage');
-        wmInput.addEventListener('change', () => {
-            document.getElementById('watermarkSettings').style.display = 'block';
-        });
-        document.getElementById('clearWatermark').addEventListener('click', () => {
-            document.getElementById('watermarkSettings').style.display = 'none';
-        });
-    </script>
-</body>
+    <script src="markdown.js"></script>
+    <script src="app.js"></script></body>
 
 </html>
