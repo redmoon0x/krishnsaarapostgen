@@ -214,6 +214,16 @@ function parseMarkdown(text) {
             while (i < lines.length) {
                 const im = re.exec(lines[i]);
                 if (!im) {
+                    // A blank line between items does not end the list, which is
+                    // how CommonMark reads it and how people actually write long
+                    // numbered items. Look past the blanks for another item of
+                    // the same kind before giving up.
+                    if (!lines[i].trim()) {
+                        let j = i;
+                        while (j < lines.length && !lines[j].trim()) j += 1;
+                        if (j < lines.length && re.test(lines[j])) { i = j; continue; }
+                        break;
+                    }
                     // Lazy continuation line folds into the previous item
                     if (items.length && lines[i].trim() && !MD_HEADING.test(lines[i]) &&
                         !MD_BULLET.test(lines[i]) && !MD_ORDERED.test(lines[i]) &&
@@ -536,10 +546,12 @@ class MdEngine {
         const laid = block.items.map((item, n) => {
             const x = indent * step + markerGap;
             const avail = Math.max(80, width - x);
-            let marker = block.ordered ? `${block.start + n}.` : '';
-            if (item.checked !== null && item.checked !== undefined) {
-                marker = '';
-            }
+            // A split item carries an explicit label: its number on the first
+            // part, '' on the continuation, so a part never renumbers the list.
+            let marker;
+            if (item.label !== undefined) marker = item.label;
+            else if (item.checked !== null && item.checked !== undefined) marker = '';
+            else marker = block.ordered ? `${block.start + n}.` : '';
             maxMarker = Math.max(maxMarker, this.measure(marker, this.bodyFont()));
             const lines = this.wrapRuns(item.runs, () => avail);
             const h = lines.length * lineH;

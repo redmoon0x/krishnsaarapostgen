@@ -1254,6 +1254,9 @@ class KannadaCarouselGenerator {
         // The gap about to be inserted counts against the space available.
         const incomingGap = () => (page.items.length ? gapSize : 0);
         const fits = (m) => room() >= incomingGap() + m.height;
+        // Lines still placeable on the current page, re-read on every call so a
+        // chunk that follows a page break is sized against the fresh page.
+        const capacityLines = () => Math.max(1, Math.floor((room() - incomingGap()) / lineH));
 
         const place = (block, m, gapBefore) => {
             const gap = gapBefore && page.items.length ? gapSize : 0;
@@ -1276,34 +1279,54 @@ class KannadaCarouselGenerator {
                 let maxLines = Math.max(1, Math.floor((room() - incomingGap()) / lineH));
                 let measured = md.measureBlock(block, width, capFor);
 
-                if (measured.lines.length > maxLines) {
-                    // Rather than shred a sentence for a two-line remnant, take a
-                    // clean page. This is what keeps ragged bottoms ragged.
-                    const fullLines = this.capacityFor(false, header, lineH);
-                    const worthIt = Math.max(3, Math.floor(fullLines * 0.3));
-                    if (page.items.length && maxLines < worthIt) {
-                        startNewPage();
-                        capFor = page.cap;
-                        maxLines = this.capacityFor(pages.length === 0, header, lineH);
-                        measured = md.measureBlock(block, width, capFor);
-                    }
-                }
                 if (measured.lines.length <= maxLines && fits(measured)) {
                     place(block, measured, page.items.length > 0);
                     continue;
                 }
 
-                const parts = this.splitProse(block, width, maxLines, capFor);
-                for (const part of parts) {
-                    const pm = md.measureBlock(part.block, width, part.cap);
-                    if (!fits(pm) && page.items.length) startNewPage();
-                    place(part.block, pm, page.items.length > 0);
+                // The last paragraph is better moved whole than split. Splitting
+                // fills this page but strands a sliver of two or three lines on a
+                // page of its own, which reads worse than a shorter final page.
+                // Mid-document the opposite is true -- a short paragraph splits
+                // happily, because the next block fills the page after it.
+                const isLast = !blocks.slice(bi + 1).some((b) =>
+                    b.type !== 'pagebreak' && b.type !== 'spacer');
+                const fresh = this.capacityFor(pages.length === 0, header, lineH) * lineH;
+                if (isLast && page.items.length && measured.height <= fresh * 0.3) {
+                    startNewPage();
+                    capFor = pages.length === 0 ? cap : null;
+                    const whole = md.measureBlock(block, width, capFor);
+                    if (fits(whole)) {
+                        place(block, whole, page.items.length > 0);
+                        continue;
+                    }
+                }
+
+                // One piece at a time, each measured against the page it is about
+                // to land on: take a piece, place it (breaking the page if it
+                // does not fit), then ask for the next with the new room. A
+                // piece that had to move to a fresh page is taken again, since
+                // that page has more room than the one it was sized for.
+                const total = this.plainLength(block.runs);
+                let from = 0;
+                let lead = capFor;
+                while (from < total) {
+                    const make = (lines) => this.proseChunkAt(block, from, width, () => lines, lead);
+                    let fit = this.fitProsePiece(make, width, fits, capacityLines);
+                    if (!fits(fit.measure) && page.items.length) {
+                        startNewPage();
+                        fit = this.fitProsePiece(make, width, fits, capacityLines);
+                    }
+                    place(fit.chunk.block, fit.measure, page.items.length > 0);
+                    from = fit.chunk.to;
+                    lead = null;
                 }
                 continue;
             }
 
             if (block.type === 'list') {
-                this.layoutList(block, maxWidth, fits, place, startNewPage, () => page.items.length > 0, md);
+                this.layoutList(block, maxWidth, fits, place, startNewPage,
+                    () => page.items.length > 0, md, capacityLines);
                 continue;
             }
 
@@ -1350,101 +1373,199 @@ class KannadaCarouselGenerator {
         return out.length ? out : [{ text: '' }];
     }
 
-    /**
-     * Break an over-long paragraph into page-sized chunks. Preference order is
-     * whole sentence, then whole clause, then word — so a slide break never
-     * lands mid-sentence unless a single clause is longer than a page.
-     */
-    splitProse(block, maxWidth, maxLines, cap) {
-        const plain = block.runs.map((r) => r.text).join('');
-        const maxH = maxLines * (this.settings.fontSize * this.settings.lineHeight);
-        const md = this.md;
-        const chunks = [];
-        const capAt = (i) => (i === 0 ? cap : null);
-        const heightOf = (from, to, i) =>
-            md.measureBlock({ type: 'para', runs: this.sliceRuns(block.runs, from, to) }, maxWidth, capAt(i)).height;
-
-        let cursor = 0;
-        let index = 0;
-        while (cursor < plain.length) {
-            let best = -1;
-
-            for (const sp of this.sentenceSpans(plain)) {
-                if (sp.to <= cursor) continue;
-                if (sp.from < cursor) continue;
-                if (heightOf(cursor, sp.to, index) <= maxH) best = sp.to;
-                else break;
-            }
-            if (best === -1) {
-                for (const sp of this.clauseSpans(plain, cursor, plain.length)) {
-                    if (sp.to <= cursor) continue;
-                    if (heightOf(cursor, sp.to, index) <= maxH) best = sp.to;
-                    else break;
-                }
-            }
-            if (best === -1) {
-                // A single clause exceeds a page: fill greedily by word.
-                let trial = cursor;
-                while (trial < plain.length) {
-                    let next = trial;
-                    while (next < plain.length && !/\s/.test(plain[next])) next += 1;
-                    while (next < plain.length && /\s/.test(plain[next])) next += 1;
-                    if (next <= trial) { next = trial + 1; }
-                    if (heightOf(cursor, next, index) <= maxH) best = next;
-                    else break;
-                    trial = next;
-                }
-            }
-            if (best <= cursor) best = Math.min(plain.length, cursor + 1);
-
-            chunks.push({
-                block: { type: 'para', runs: this.sliceRuns(block.runs, cursor, best) },
-                cap: capAt(index)
-            });
-            cursor = best;
-            index += 1;
-        }
-        return chunks.length ? chunks : [{ block, cap }];
+    /** Length of a run list's plain text, in characters. */
+    plainLength(runs) {
+        return runs.reduce((n, r) => n + r.text.length, 0);
     }
 
-    /** Lay out a list, splitting between items so a slide never cuts an item. */
-    layoutList(block, maxWidth, fits, place, startNewPage, hasItems, md) {
-        const total = block.items.length;
-        let offset = 0;
+    /**
+     * The next page-sized piece of a paragraph, starting at `from`.
+     *
+     * One piece at a time, and `linesAvailable()` is read fresh for each call:
+     * the caller places each piece before asking for the next one, so a piece
+     * that follows a page break is measured against the page it lands on.
+     * Producing every piece up front -- against one budget -- is what leaves
+     * every page after the first holding only a few lines.
+     *
+     * Preference order is whole sentence, then whole clause, then word, so a
+     * break never lands mid-sentence unless a single clause exceeds a page.
+     * Always advances, so the caller's loop terminates.
+     */
+    proseChunkAt(block, from, maxWidth, linesAvailable, cap) {
+        const plain = block.runs.map((r) => r.text).join('');
+        const lineH = this.settings.fontSize * this.settings.lineHeight;
+        const maxH = Math.max(1, linesAvailable()) * lineH;
+        const md = this.md;
+        const heightOf = (a, b) => md.measureBlock(
+            { type: 'para', runs: this.sliceRuns(block.runs, a, b) }, maxWidth, cap).height;
+
+        let best = -1;
+        for (const sp of this.sentenceSpans(plain)) {
+            if (sp.to <= from) continue;
+            if (sp.from < from) continue;
+            if (heightOf(from, sp.to) <= maxH) best = sp.to;
+            else break;
+        }
+        if (best === -1) best = from;
+
+        // Whole-sentence packing alone still leaves the page short whenever the
+        // next sentence is taller than the remainder. Spend what is left on
+        // clause boundaries instead of handing the page over early.
+        if (best < plain.length) {
+            for (const sp of this.clauseSpans(plain, best, plain.length)) {
+                if (sp.to <= best) continue;
+                // Measured from `from`, not from best: this is the cumulative
+                // piece, and it has to keep fitting.
+                if (heightOf(from, sp.to) <= maxH) best = sp.to;
+                else break;
+            }
+        }
+        if (best <= from) {
+            // A single clause exceeds a page: fill greedily by word.
+            let trial = from;
+            while (trial < plain.length) {
+                let next = trial;
+                while (next < plain.length && !/\s/.test(plain[next])) next += 1;
+                while (next < plain.length && /\s/.test(plain[next])) next += 1;
+                if (next <= trial) next = trial + 1;
+                if (heightOf(from, next) <= maxH) best = next;
+                else break;
+                trial = next;
+            }
+        }
+        if (best <= from) best = Math.min(plain.length, from + 1);
+
+        return {
+            from,
+            to: best,
+            cap,
+            block: { type: 'para', runs: this.sliceRuns(block.runs, from, best) }
+        };
+    }
+
+    /**
+     * Take the next prose piece, shrinking its line budget until it fits what is
+     * left on the page.
+     *
+     * A line-count budget cannot see the few px of padding a list item carries,
+     * so the first attempt can overshoot by a hair and throw away a tail that
+     * would have fitted -- which is how a page ends up 20% short for 3px.
+     */
+    fitProsePiece(makeChunk, width, fits, capacityLines) {
+        const md = this.md;
+        let lines = Math.max(1, capacityLines());
+        let chunk = makeChunk(lines);
+        let m = md.measureBlock(chunk.block, width, chunk.cap);
+        while (!fits(m) && lines > 1) {
+            lines -= 1;
+            chunk = makeChunk(lines);
+            m = md.measureBlock(chunk.block, width, chunk.cap);
+        }
+        return { chunk, measure: m };
+    }
+
+    /**
+     * Lay out a list, splitting between items so a slide never cuts an item.
+     *
+     * An item that is itself taller than the room left is split prose-wise to
+     * fill the page instead of jumping whole to the next one, which would leave
+     * a hole. Its continuation lands at the top of the next page with no marker,
+     * so the number never repeats and the list never renumbers itself.
+     */
+    layoutList(block, maxWidth, fits, place, startNewPage, hasItems, md, capacityLines) {
+        const step = Math.round(this.settings.fontSize * 0.5);
+        const markerGap = Math.round(this.settings.fontSize * 0.62);
+        const avail = Math.max(80, maxWidth - ((block.indent || 0) * step + markerGap));
+        // Below this, a split would leave an orphan tail; a clean page reads better.
+        const MIN_SPLIT = 3;
+
+        // Each entry carries its own label and the range of its item's text that
+        // is still unplaced, so a piece can be handed back for re-measuring on
+        // the next page without disturbing the numbering.
+        let queue = block.items.map((it, n) => ({
+            item: it,
+            from: 0,
+            to: this.plainLength(it.runs),
+            label: block.ordered ? `${block.start + n}.` : ''
+        }));
         let first = true;
 
-        while (offset < total) {
-            const sliceOf = (n) => ({
-                type: 'list',
-                ordered: block.ordered,
-                start: block.start + offset,
-                items: block.items.slice(offset, offset + n)
-            });
+        const sliceOf = (from, count) => ({
+            type: 'list',
+            ordered: block.ordered,
+            start: block.start + from,
+            items: queue.slice(from, from + count).map((q) => Object.assign({}, q.item, {
+                label: q.label,
+                runs: q.to > q.from ? this.sliceRuns(q.item.runs, q.from, q.to) : [{ text: '' }]
+            }))
+        });
 
-            const whole = md.measureBlock(sliceOf(total - offset), maxWidth, null);
+        while (queue.length) {
+            const whole = md.measureBlock(sliceOf(0, queue.length), maxWidth, null);
             if (fits(whole)) {
-                place(sliceOf(total - offset), whole, !first);
+                place(sliceOf(0, queue.length), whole, !first);
                 return;
             }
 
             // Largest prefix of items that fits in what is left.
             let take = 0;
-            for (let n = total - offset; n >= 1; n -= 1) {
-                if (fits(md.measureBlock(sliceOf(n), maxWidth, null))) { take = n; break; }
+            for (let n = queue.length; n >= 1; n -= 1) {
+                if (fits(md.measureBlock(sliceOf(0, n), maxWidth, null))) { take = n; break; }
             }
 
-            if (take === 0) {
-                // Not even one item fits here. Move to a clean page and retry,
-                // rather than overflowing. If the page is already empty, place
-                // one item regardless so the loop always terminates.
-                if (hasItems()) { startNewPage(); first = false; continue; }
-                take = 1;
+            if (take > 0) {
+                place(sliceOf(0, take), md.measureBlock(sliceOf(0, take), maxWidth, null), !first);
+                queue = queue.slice(take);
+                first = false;
+                if (!queue.length) return;
+            } else if (!hasItems()) {
+                // Taller than a whole empty page. Place it whole so the loop
+                // terminates; the renderer clips rather than losing the item.
+                place(sliceOf(0, 1), md.measureBlock(sliceOf(0, 1), maxWidth, null), !first);
+                queue = queue.slice(1);
+                first = false;
+                if (!queue.length) return;
+            } else if (capacityLines() < MIN_SPLIT) {
+                // Too little room left to be worth a fragment: take a clean page.
+                startNewPage();
+                first = true;
+                continue;
             }
 
-            place(sliceOf(take), md.measureBlock(sliceOf(take), maxWidth, null), !first);
-            offset += take;
-            first = false;
-            if (offset < total) startNewPage();
+            // Fill the tail of this page with the head of the next item. Only one
+            // piece is taken: the rest stays in the queue as an unmarked
+            // continuation and is re-measured on the page that follows, which
+            // has more room than the page just filled.
+            const head = queue[0];
+            const pieceFor = (lines) => {
+                const piece = this.proseChunkAt({ runs: head.item.runs }, head.from,
+                    avail, () => lines, null);
+                piece.listBlock = {
+                    type: 'list',
+                    ordered: block.ordered,
+                    start: block.start,
+                    items: [Object.assign({}, head.item, {
+                        label: head.label,
+                        runs: this.sliceRuns(head.item.runs, head.from, piece.to)
+                    })]
+                };
+                return piece;
+            };
+            if (head.to > head.from) {
+                const fit = this.fitProsePiece(pieceFor, maxWidth, fits, capacityLines);
+                if (fit.chunk.listBlock && fit.chunk.to > head.from) {
+                    place(fit.chunk.listBlock, fit.measure, !first);
+                    first = false;
+                    queue[0] = { item: head.item, from: fit.chunk.to, to: head.to, label: '' };
+                    startNewPage();
+                    first = true;
+                    continue;
+                }
+            }
+            // The item cannot be split usefully here. Take a clean page and
+            // retry it there, so the queue always makes progress.
+            startNewPage();
+            first = true;
         }
     }
 
