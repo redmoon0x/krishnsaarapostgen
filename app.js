@@ -1451,15 +1451,19 @@ class KannadaCarouselGenerator {
      * so the first attempt can overshoot by a hair and throw away a tail that
      * would have fitted -- which is how a page ends up 20% short for 3px.
      */
-    fitProsePiece(makeChunk, width, fits, capacityLines) {
+    fitProsePiece(makeChunk, width, fits, capacityLines, pick) {
         const md = this.md;
+        // `pick` names the block that will actually be placed, when it is not
+        // chunk.block: a list piece carries a para block used only for slicing
+        // and a list block that gets drawn, and the two measure differently.
+        const blockOf = pick || ((chunk) => chunk.block);
         let lines = Math.max(1, capacityLines());
         let chunk = makeChunk(lines);
-        let m = md.measureBlock(chunk.block, width, chunk.cap);
+        let m = md.measureBlock(blockOf(chunk), width, chunk.cap);
         while (!fits(m) && lines > 1) {
             lines -= 1;
             chunk = makeChunk(lines);
-            m = md.measureBlock(chunk.block, width, chunk.cap);
+            m = md.measureBlock(blockOf(chunk), width, chunk.cap);
         }
         return { chunk, measure: m };
     }
@@ -1552,7 +1556,11 @@ class KannadaCarouselGenerator {
                 return piece;
             };
             if (head.to > head.from) {
-                const fit = this.fitProsePiece(pieceFor, maxWidth, fits, capacityLines);
+                // Measure the list block that gets placed, not the para block
+                // the chunk was sliced from: the list adds marker indent and a
+                // trailing gap, so the para measure understates the height.
+                const fit = this.fitProsePiece(pieceFor, maxWidth, fits, capacityLines,
+                    (c) => c.listBlock);
                 if (fit.chunk.listBlock && fit.chunk.to > head.from) {
                     place(fit.chunk.listBlock, fit.measure, !first);
                     first = false;

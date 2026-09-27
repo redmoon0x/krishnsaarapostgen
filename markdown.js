@@ -543,7 +543,8 @@ class MdEngine {
         const { lineH, markerGap, step, indent } = this.listGeometry(block);
         let height = 0;
         let maxMarker = 0;
-        const laid = block.items.map((item, n) => {
+        const items = Array.isArray(block.items) ? block.items : [];
+        const laid = items.map((item, n) => {
             const x = indent * step + markerGap;
             const avail = Math.max(80, width - x);
             // A split item carries an explicit label: its number on the first
@@ -555,7 +556,7 @@ class MdEngine {
             maxMarker = Math.max(maxMarker, this.measure(marker, this.bodyFont()));
             const lines = this.wrapRuns(item.runs, () => avail);
             const h = lines.length * lineH;
-            height += h + (n < block.items.length - 1 ? Math.round(lineH * 0.3) : 0);
+            height += h + (n < items.length - 1 ? Math.round(lineH * 0.3) : 0);
             return { lines, indent, marker, checked: item.checked, height: h };
         });
         height += Math.round(this.s.fontSize * 0.2);
@@ -823,6 +824,9 @@ class MdEngine {
 
     drawList(block, x, y, width, m) {
         const ctx = this.ctx;
+        // A measure belonging to a different block shape carries no list layout.
+        // Re-measure this block rather than reading a field that is not there.
+        if (!m || !Array.isArray(m.laid)) m = this.measureList(block, width);
         let cy = y;
         m.laid.forEach((item, n) => {
             const ix = x + item.indent * m.step;
